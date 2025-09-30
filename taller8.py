@@ -10,41 +10,50 @@ random.seed(42)
 np.random.seed(42)
 
 
-def vfma(func, m0, bounds, i, initial_temp=np.array([100, 100]), iter_per_temp=100):
+def vfma(
+    func,
+    m0,
+    bounds,
+    i,
+    initial_temps=np.array([5.0, 5.0]),
+    coeficients=np.array([1, 1]),
+    iter_per_temp=100,
+    NM=2,
+):
     """
     Very Fast metropolis algorithm
     """
-    T = initial_temp
+    T = initial_temps.copy()
+    C = coeficients
     Em0 = func(m0)
     m1 = m0.copy()
-
-    while T > 0:
+    k = 0
+    while np.linalg.norm(T) > 0.001:
         for _ in range(iter_per_temp):
-            m1 = [
-                np.clip(
-                    m0[0] + np.random.uniform(-bounds[0][1] / 10, bounds[0][1] / 10),
-                    bounds[0][0],
-                    bounds[0][1],
-                ),
-                np.clip(
-                    m0[1] + np.random.uniform(-bounds[1][1] / 10, bounds[1][1] / 10),
-                    bounds[1][0],
-                    bounds[1][1],
-                ),
-            ]
+            for j in range(NM):
+                m1 = m0.copy()
+                U = random.uniform(0, 1)
+                yi = np.sign(U - 0.5) * T[j] * ((1 + 1 / T[j]) ** (abs(2 * U - 1)) - 1)
+                # print(yi)
+                m1[j] = m0[j] + yi * (
+                    bounds[j][1] - bounds[j][0]
+                )  # salto*(maximo - minimo)
+                m1[j] = np.clip(
+                    m1[j], bounds[j][0], bounds[j][1]
+                )  # recortar al minimo y maximo
+                # ......
             delta_e = func(m1) - Em0
-            # Clamp the value of -delta_e / T to avoid overflow
-            exponent = min(100, max(-100, -delta_e / T))
+            exponent = -delta_e / T[1]
             P = np.exp(exponent)
-
-            if delta_e < 0 or random.uniform(0, 1) < P:
-                m0 = m1
+            if delta_e < 0 or P > random.uniform(0, 1):
+                m0 = m1.copy()
                 Em0 = func(m0)
-        if T >= 2:
-            T -= 1
-        else:
-            T -= 0.1
-    print(f"Pair {i}: m = {m0}, cost = {Em0}")
+        # print(delta_e)
+        k = k + 1
+        for j in range(NM):
+            T[j] = initial_temps[j] * np.exp(-C[j] * k ** (1 / NM))
+
+    print(f"Pair {i}: m = {m0}, cost = {Em0}, iterations = {k}")
     return m0, Em0
 
 
@@ -95,21 +104,20 @@ def simulated_annealing(problem, n):
 
     m1, c = zip(*results)  # Properly unpack the results
 
-    print(f"Heristic parameters for {problem}:")
-    for i in range(num_pairs):
-        print(f"m = {m1[i]}, cost = {c[i]}")
     if problem in ["slug", "genuchten"]:
         results_list = [{"m": m1[i], "cost": c[i][0]} for i in range(num_pairs)]
     else:
         results_list = [{"m": m1[i], "cost": c[i]} for i in range(num_pairs)]
-    with open(f"results_{problem}{n}.json", "w") as f:
+    # ------------------
+    # Save in Json
+    # ------------------
+    with open(f"results_{problem}_{n}.json", "w") as f:
         json.dump(results_list, f, indent=4)
 
 
 if __name__ == "__main__":
     # problem = "drop"  # problems: drop, boha1, ackley, matya, slug, genuchten
 
-    problem_list = ["genuchten"]
+    problem_list = ["drop"]
     for problem in problem_list:
-        simulated_annealing(problem, 1)
-        simulated_annealing(problem, 2)
+        simulated_annealing(problem, "vfma")
