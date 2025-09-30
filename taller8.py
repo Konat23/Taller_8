@@ -21,35 +21,28 @@ def vfma(
     NM=2,
 ):
     """
-    Very Fast metropolis algorithm
+    Very Fast Metropolis Algorithm
     """
     T = initial_temps.copy()
     C = coeficients
     Em0 = func(m0)
-    m1 = m0.copy()
     k = 0
-    while np.linalg.norm(T) > 0.001:
+    while np.linalg.norm(T) > 0.001:  # criterio de parada
         for _ in range(iter_per_temp):
+            m1 = m0.copy()
             for j in range(NM):
-                m1 = m0.copy()
                 U = random.uniform(0, 1)
                 yi = np.sign(U - 0.5) * T[j] * ((1 + 1 / T[j]) ** (abs(2 * U - 1)) - 1)
-                # print(yi)
-                m1[j] = m0[j] + yi * (
-                    bounds[j][1] - bounds[j][0]
-                )  # salto*(maximo - minimo)
-                m1[j] = np.clip(
-                    m1[j], bounds[j][0], bounds[j][1]
-                )  # recortar al minimo y maximo
-                # ......
+                m1[j] = m0[j] + yi * (bounds[j][1] - bounds[j][0])
+                m1[j] = np.clip(m1[j], bounds[j][0], bounds[j][1])
+
             delta_e = func(m1) - Em0
-            exponent = -delta_e / T[1]
-            P = np.exp(exponent)
-            if delta_e < 0 or P > random.uniform(0, 1):
+            P = np.exp(-delta_e / T[0])
+            if delta_e <= 0 or P > random.uniform(0, 1):
                 m0 = m1.copy()
                 Em0 = func(m0)
-        # print(delta_e)
-        k = k + 1
+
+        k += 1
         for j in range(NM):
             T[j] = initial_temps[j] * np.exp(-C[j] * k ** (1 / NM))
 
@@ -116,7 +109,7 @@ def simulated_annealing(problem, n):
 
 
 if __name__ == "__main__":
-    # problem = "drop"  # problems: drop, boha1, ackley, matya, slug, genuchten
+    # problem = "drop"  # problems: "boha1","matya","ackley", "drop",, slug, genuchten
 
     problem_list = ["drop"]
     for problem in problem_list:
