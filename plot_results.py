@@ -132,12 +132,14 @@ def compute_metrics(problem, PATH):
 
 
 if __name__ == "__main__":
-    n = 2
-    problem = "genuchten"  # problems: "boha1","matya","ackley", "drop"
-    PATH = f"results_{problem}{n}.json"
+    algorithm = "vfma"
+    problem = (
+        "genuchten"  # problems: "boha1","matya","ackley", "drop", "slug", "genuchten"
+    )
+    PATH = f"results/{problem}_{algorithm}.json"
     mean_m1, std_m1, mean_m2, std_m2 = compute_metrics(problem, PATH)
     # Save txt with metrics
-    with open(f"metrics_{problem}{n}.txt", "w") as f:
+    with open(f"metrics/{problem}_{algorithm}.txt", "w") as f:
         f.write(f"Metrics for {problem} problem:\n")
         f.write(f"Mean m1: {mean_m1}, Std Dev m1: {std_m1}\n")
         f.write(f"Mean m2: {mean_m2}, Std Dev m2: {std_m2}\n")
@@ -162,4 +164,4 @@ if __name__ == "__main__":
         ground_truth = [0.012605, 1.853943]
 
     # Update the plot_results call to use the dynamically set bounds and ground_truth
-    plot_results(problem, PATH, n, bounds=bounds, ground_truth=ground_truth)
+    plot_results(problem, PATH, algorithm, bounds=bounds, ground_truth=ground_truth)

@@ -11,6 +11,41 @@ np.random.seed(42)
 
 
 @jit(nopython=False)
+def ma(func, m0, bounds, initial_temp=100.0, iter_per_temp=100):
+    """
+    Clásico Metropolis Algorithm (Simulated Annealing)
+    Adaptado a estilo VFMA
+    """
+    T = initial_temp
+    Em0 = func(m0)
+    k = 0
+
+    while T > 0.001:  # criterio de parada
+        for _ in range(iter_per_temp):
+            m1 = np.zeros_like(m0)
+            for j in range(len(m0)):
+                m1[j] = np.random.uniform(bounds[j][0], bounds[j][1])
+
+            delta_e = func(m1) - Em0
+            exponent = min(100, max(-100, -delta_e / T))  # clamp para evitar overflow
+            P = np.exp(exponent)
+
+            if delta_e < 0 or random.uniform(0, 1) < P:
+                m0 = m1.copy()
+                Em0 = func(m0)
+
+        # enfriamiento lineal
+        if T > 2:
+            T -= 1
+        else:
+            T -= 0.1
+
+        k += 1
+
+    return m0, Em0, k
+
+
+@jit(nopython=False)
 def vfma(
     func,
     m0,
@@ -49,8 +84,7 @@ def vfma(
     return m0, Em0, k  # devolvemos sin imprimir
 
 
-@timing
-def simulated_annealing(problem, n):
+def get_problem_params(problem: str):
     if problem == "drop":
         bounds = np.array([[-5.0, 5.0], [-5.0, 5.0]])
         initial_temps = np.array([100.0, 100.0])
@@ -78,27 +112,44 @@ def simulated_annealing(problem, n):
     elif problem == "slug":
         bounds = np.array([[0.001, 0.01], [0.1, 1.0]])
         initial_temps = np.array([100.0, 100.0])
-        num_pairs = 50
+        num_pairs = 100
         func = cost_slug_model
 
     elif problem == "genuchten":
         bounds = np.array([[0.001, 0.02], [1, 10]])
         initial_temps = np.array([100.0, 100.0])
-        num_pairs = 50
+        num_pairs = 100
         func = cost_genuchten_model
 
     else:
         raise ValueError(f"Unknown problem specified: {problem}")
 
+    return bounds, initial_temps, num_pairs, func
+
+
+@timing
+def simulated_annealing(problem, algorithm):
+
+    bounds, initial_temps, num_pairs, func = get_problem_params("genuchten")
+
     m0 = [
         np.random.uniform(bounds[0][0], bounds[0][1], num_pairs),
         np.random.uniform(bounds[1][0], bounds[1][1], num_pairs),
     ]
+    print("-" * 50)
+    print(f"Running {algorithm} for problem: {problem} with {num_pairs} pairs")
 
     results = []
     for i in range(num_pairs):
         m0_pair = np.array([m0[0][i], m0[1][i]])
-        m_opt, cost, iters = vfma(func, m0_pair, bounds, initial_temps=initial_temps)
+        if algorithm == "ma":
+            m_opt, cost, iters = ma(
+                func, m0_pair, bounds, initial_temp=initial_temps[0]
+            )
+        elif algorithm == "vfma":
+            m_opt, cost, iters = vfma(
+                func, m0_pair, bounds, initial_temps=initial_temps
+            )
         print(f"Pair {i}: m = {m_opt}, cost = {cost}, iterations = {iters}")
         results.append((m_opt, cost))
 
@@ -108,14 +159,18 @@ def simulated_annealing(problem, n):
         {"m": m1[i].tolist(), "cost": float(c[i])} for i in range(num_pairs)
     ]
 
+    print("-" * 50)
+
     # ------------------
     # Save in Json
     # ------------------
-    with open(f"results_{problem}_{n}.json", "w") as f:
+    with open(f"results/{problem}_{algorithm}.json", "w") as f:
         json.dump(results_list, f, indent=4)
 
 
 if __name__ == "__main__":
-    problem_list = ["slug"]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
+    problem_list = [
+        "genuchten"
+    ]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
     for problem in problem_list:
         simulated_annealing(problem, "vfma")
