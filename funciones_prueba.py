@@ -1,6 +1,8 @@
 import numpy as np
+from numba import jit
 
 
+@jit(nopython=True)
 def drop(xx):
     """INPUT:
     xx = [x1, x2]
@@ -15,22 +17,32 @@ def drop(xx):
     return -frac1 / frac2
 
 
+@jit(nopython=True)
 def ackley(xx, a=20, b=0.2, c=2 * np.pi):
     """Ackley function.
     INPUT:
-    xx: list of input values
+    xx: array of input values
     a, b, c: optional parameters with default values
     """
     d = len(xx)
-    sum1 = sum(xi**2 for xi in xx)
-    sum2 = sum(np.cos(c * xi) for xi in xx)
+
+    # Calcular sum1 sin usar generadores
+    sum1 = 0.0
+    for i in range(d):
+        sum1 += xx[i] * xx[i]
+
+    # Calcular sum2 sin usar generadores
+    sum2 = 0.0
+    for i in range(d):
+        sum2 += np.cos(c * xx[i])
 
     term1 = -a * np.exp(-b * np.sqrt(sum1 / d))
     term2 = -np.exp(sum2 / d)
 
-    return term1 + term2 + a + np.exp(1)
+    return term1 + term2 + a + np.exp(1.0)
 
 
+@jit(nopython=True)
 def boha1(xx):
     """Boha1 function.
     INPUT:
@@ -46,6 +58,7 @@ def boha1(xx):
     return term1 + term2 + term3 + term4 + 0.7
 
 
+@jit(nopython=True)
 def matya(xx):
     """Matya function.
     INPUT:
