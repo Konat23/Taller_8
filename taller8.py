@@ -53,31 +53,37 @@ def vfma(
 def simulated_annealing(problem, n):
     if problem == "drop":
         bounds = [[-5, 5], [-5, 5]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = drop
 
     elif problem == "boha1":
         bounds = [[-100, 100], [-100, 100]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = boha1
 
     elif problem == "ackley":
         bounds = [[-32, 32], [-32, 32]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = ackley
 
     elif problem == "matya":
         bounds = [[-10, 10], [-10, 10]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = matya
 
     elif problem == "slug":
         bounds = [[0.001, 0.01], [0.1, 1.0]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 50
         func = cost_slug_model
 
     elif problem == "genuchten":
         bounds = [[0.001, 0.02], [1, 10]]
+        initial_temps = np.array([100.0, 100.0])
         num_pairs = 50
         func = cost_genuchten_model
 
@@ -92,7 +98,7 @@ def simulated_annealing(problem, n):
     results = []
     for i in range(num_pairs):
         m0_pair = [m0[0][i], m0[1][i]]
-        result = vfma(func, m0_pair, bounds, i)
+        result = vfma(func, m0_pair, bounds, i, initial_temps=initial_temps)
         results.append(result)
 
     m1, c = zip(*results)  # Properly unpack the results
@@ -111,6 +117,6 @@ def simulated_annealing(problem, n):
 if __name__ == "__main__":
     # problem = "drop"  # problems: "boha1","matya","ackley", "drop",, slug, genuchten
 
-    problem_list = ["drop"]
+    problem_list = ["slug"]
     for problem in problem_list:
         simulated_annealing(problem, "vfma")
