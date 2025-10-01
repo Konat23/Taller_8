@@ -104,14 +104,9 @@ def simulated_annealing(problem, n):
 
     m1, c = zip(*results)  # Properly unpack the results
 
-    if problem in ["slug", "genuchten"]:
-        results_list = [
-            {"m": m1[i].tolist(), "cost": float(c[i][0])} for i in range(num_pairs)
-        ]
-    else:
-        results_list = [
-            {"m": m1[i].tolist(), "cost": float(c[i])} for i in range(num_pairs)
-        ]
+    results_list = [
+        {"m": m1[i].tolist(), "cost": float(c[i])} for i in range(num_pairs)
+    ]
 
     # ------------------
     # Save in Json
@@ -121,6 +116,6 @@ def simulated_annealing(problem, n):
 
 
 if __name__ == "__main__":
-    problem_list = ["drop"]
+    problem_list = ["slug"]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
     for problem in problem_list:
         simulated_annealing(problem, "vfma")
