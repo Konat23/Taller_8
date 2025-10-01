@@ -1,8 +1,8 @@
 import numpy as np
 import random
-from concurrent.futures import ThreadPoolExecutor
-import json
 from utils import timing
+import json
+from numba import jit
 from funciones_prueba import drop, ackley, boha1, matya
 from funciones_taller import cost_slug_model, cost_genuchten_model
 
@@ -10,12 +10,11 @@ random.seed(42)
 np.random.seed(42)
 
 
-@timing
+@jit(nopython=False)
 def vfma(
     func,
     m0,
     bounds,
-    i,
     initial_temps=np.array([5.0, 5.0]),
     coeficients=np.array([1, 1]),
     iter_per_temp=100,
@@ -35,7 +34,7 @@ def vfma(
                 U = random.uniform(0, 1)
                 yi = np.sign(U - 0.5) * T[j] * ((1 + 1 / T[j]) ** (abs(2 * U - 1)) - 1)
                 m1[j] = m0[j] + yi * (bounds[j][1] - bounds[j][0])
-                m1[j] = np.clip(m1[j], bounds[j][0], bounds[j][1])
+                m1[j] = min(max(m1[j], bounds[j][0]), bounds[j][1])
 
             delta_e = func(m1) - Em0
             P = np.exp(-delta_e / T[0])
@@ -47,43 +46,43 @@ def vfma(
         for j in range(NM):
             T[j] = initial_temps[j] * np.exp(-C[j] * k ** (1 / NM))
 
-    print(f"Pair {i}: m = {m0}, cost = {Em0}, iterations = {k}")
-    return m0, Em0
+    return m0, Em0, k  # devolvemos sin imprimir
 
 
+@timing
 def simulated_annealing(problem, n):
     if problem == "drop":
-        bounds = [[-5, 5], [-5, 5]]
+        bounds = np.array([[-5.0, 5.0], [-5.0, 5.0]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = drop
 
     elif problem == "boha1":
-        bounds = [[-100, 100], [-100, 100]]
+        bounds = np.array([[-100, 100], [-100, 100]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = boha1
 
     elif problem == "ackley":
-        bounds = [[-32, 32], [-32, 32]]
+        bounds = np.array([[-32, 32], [-32, 32]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = ackley
 
     elif problem == "matya":
-        bounds = [[-10, 10], [-10, 10]]
+        bounds = np.array([[-10, 10], [-10, 10]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = matya
 
     elif problem == "slug":
-        bounds = [[0.001, 0.01], [0.1, 1.0]]
+        bounds = np.array([[0.001, 0.01], [0.1, 1.0]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 50
         func = cost_slug_model
 
     elif problem == "genuchten":
-        bounds = [[0.001, 0.02], [1, 10]]
+        bounds = np.array([[0.001, 0.02], [1, 10]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 50
         func = cost_genuchten_model
@@ -98,16 +97,22 @@ def simulated_annealing(problem, n):
 
     results = []
     for i in range(num_pairs):
-        m0_pair = [m0[0][i], m0[1][i]]
-        result = vfma(func, m0_pair, bounds, i, initial_temps=initial_temps)
-        results.append(result)
+        m0_pair = np.array([m0[0][i], m0[1][i]])
+        m_opt, cost, iters = vfma(func, m0_pair, bounds, initial_temps=initial_temps)
+        print(f"Pair {i}: m = {m_opt}, cost = {cost}, iterations = {iters}")
+        results.append((m_opt, cost))
 
     m1, c = zip(*results)  # Properly unpack the results
 
     if problem in ["slug", "genuchten"]:
-        results_list = [{"m": m1[i], "cost": c[i][0]} for i in range(num_pairs)]
+        results_list = [
+            {"m": m1[i].tolist(), "cost": float(c[i][0])} for i in range(num_pairs)
+        ]
     else:
-        results_list = [{"m": m1[i], "cost": c[i]} for i in range(num_pairs)]
+        results_list = [
+            {"m": m1[i].tolist(), "cost": float(c[i])} for i in range(num_pairs)
+        ]
+
     # ------------------
     # Save in Json
     # ------------------
@@ -116,8 +121,6 @@ def simulated_annealing(problem, n):
 
 
 if __name__ == "__main__":
-    # problem = "drop"  # problems: "boha1","matya","ackley", "drop",, slug, genuchten
-
-    problem_list = ["slug"]
+    problem_list = ["drop"]
     for problem in problem_list:
         simulated_annealing(problem, "vfma")
