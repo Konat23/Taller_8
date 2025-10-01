@@ -2,7 +2,7 @@ import numpy as np
 import random
 from concurrent.futures import ThreadPoolExecutor
 import json
-
+from utils import timing
 from funciones_prueba import drop, ackley, boha1, matya
 from funciones_taller import cost_slug_model, cost_genuchten_model
 
@@ -10,6 +10,7 @@ random.seed(42)
 np.random.seed(42)
 
 
+@timing
 def vfma(
     func,
     m0,
