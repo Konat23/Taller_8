@@ -6,7 +6,7 @@ from taller8 import vfma, get_problem_params
 
 # Configuraciones a probar
 initial_temps_list = [
-    np.array([50.0, 50.0]),
+    np.array([5.0, 5.0]),
     np.array([5.0, 2.0]),
     np.array([2.0, 5.0]),
 ]
@@ -22,6 +22,8 @@ N_REP = 50  # número de repeticiones por experimento
 
 def run_experiments():
     bounds, initial_temps_default, num_pairs, func = get_problem_params("genuchten")
+
+    results_list = []  # Lista para acumular los resultados
 
     for init_temps in initial_temps_list:
         for coefs in coeficients_list:
@@ -65,19 +67,20 @@ def run_experiments():
             print(f"Tiempo promedio: {avg_time:.4f} s")
             print(f"Promedio de valores óptimos: {avg_optimal}")
 
-            # Guardar resultados en un archivo JSON
+            # Acumular resultados en la lista
             results = {
                 "init_temps": init_temps.tolist(),
                 "coeficients": coefs.tolist(),
                 "avg_time": avg_time,
                 "avg_optimal": avg_optimal.tolist(),
             }
-
-            with open("resultados_experimentos.json", "a") as f:
-                json.dump(results, f)
-                f.write("\n")
+            results_list.append(results)
 
             print("=" * 70 + "\n")
+
+    # Guardar todos los resultados en un archivo JSON al final
+    with open("resultados_experimentos.json", "w") as f:
+        json.dump(results_list, f, indent=2)
 
 
 if __name__ == "__main__":
