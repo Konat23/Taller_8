@@ -24,7 +24,6 @@ def ma(func, m0, bounds, initial_temp=100.0, iter_per_temp=100):
             m1 = np.zeros_like(m0)
             for j in range(len(m0)):
                 m1[j] = np.random.uniform(bounds[j][0], bounds[j][1])
-
             delta_e = func(m1) - Em0
             # exponent = min(100, max(-100, -delta_e / T))  # clamp para evitar overflow
             P = np.exp(-delta_e / T)
@@ -129,7 +128,7 @@ def get_problem_params(problem: str):
 @timing
 def simulated_annealing(problem, algorithm):
 
-    bounds, initial_temps, num_pairs, func = get_problem_params("genuchten")
+    bounds, initial_temps, num_pairs, func = get_problem_params(problem)
 
     m0 = [
         np.random.uniform(bounds[0][0], bounds[0][1], num_pairs),
@@ -137,7 +136,7 @@ def simulated_annealing(problem, algorithm):
     ]
     print("-" * 50)
     print(f"Running {algorithm} for problem: {problem} with {num_pairs} pairs")
-
+    print(f"Bounds: {bounds}")
     results = []
     for i in range(num_pairs):
         m0_pair = np.array([m0[0][i], m0[1][i]])
@@ -169,7 +168,12 @@ def simulated_annealing(problem, algorithm):
 
 if __name__ == "__main__":
     problem_list = [
-        "genuchten"
+        "drop",
+        "ackley",
+        "boha1",
+        "matya",
+        "slug",
+        "genuchten",
     ]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
     for problem in problem_list:
-        simulated_annealing(problem, "ma")
+        simulated_annealing(problem, "vfma")
