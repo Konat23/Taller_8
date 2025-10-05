@@ -9,10 +9,9 @@ np.random.seed(42)
 
 # Configuraciones a probar
 initial_temps_list = [
+    np.array([50.0]),
     np.array([5.0]),
-    np.array([4.0]),
     np.array([3.0]),
-    np.array([2.0]),
 ]
 
 

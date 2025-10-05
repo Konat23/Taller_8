@@ -142,10 +142,6 @@ def simulated_annealing(problem, algorithm):
     for i in range(num_pairs):
         m0_pair = np.array([m0[0][i], m0[1][i]])
         if algorithm == "ma":
-            print(
-                f"Initial guess: {m0_pair}, initial_temps: {initial_temps[0:1]}, bounds: {bounds}, func: {func}"
-            )
-            exit()
             m_opt, cost, iters = ma(
                 func, m0_pair, bounds, initial_temp=initial_temps[0:1]
             )
