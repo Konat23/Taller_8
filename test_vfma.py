@@ -9,11 +9,13 @@ initial_temps_list = [
     np.array([5.0, 5.0]),
     np.array([5.0, 2.0]),
     np.array([2.0, 5.0]),
+    np.array([2.0, 2.0]),
 ]
 
 coeficients_list = [
     np.array([1, 1]),
-    np.array([2, 2]),
+    np.array([1, 3]),
+    np.array([3, 1]),
     np.array([3, 3]),
 ]
 
@@ -79,7 +81,7 @@ def run_experiments():
             print("=" * 70 + "\n")
 
     # Guardar todos los resultados en un archivo JSON al final
-    with open("resultados_experimentos.json", "w") as f:
+    with open("test_vfma_results.json", "w") as f:
         json.dump(results_list, f, indent=2)
 
 

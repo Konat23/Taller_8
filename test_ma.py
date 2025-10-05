@@ -10,6 +10,7 @@ np.random.seed(42)
 # Configuraciones a probar
 initial_temps_list = [
     np.array([50.0]),
+    np.array([10.0]),
     np.array([5.0]),
     np.array([3.0]),
 ]
@@ -74,5 +75,20 @@ def run_experiments():
         json.dump(results_list, f, indent=2)
 
 
+def print_results():
+    """Imprimir en una tabla los resultados guardados en el archivo JSON."""
+    with open("test_ma_results.json", "r") as f:
+        results_list = json.load(f)
+
+    print(f"{'Init Temps':<20} {'Avg Time (s)':<15} {'Avg vecindario Values':<30}")
+    print("-" * 70)
+    for res in results_list:
+        init_temps = str(res["init_temps"])
+        avg_time = f"{res['avg_time']:.4f}"
+        avg_optimal = str([f"{x:.6f}" for x in res["avg_optimal"]])
+        print(f"{init_temps:<20} {avg_time:<15} {avg_optimal:<30}")
+
+
 if __name__ == "__main__":
     run_experiments()
+    print_results()
