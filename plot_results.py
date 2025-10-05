@@ -131,11 +131,7 @@ def compute_metrics(problem, PATH):
         print("Error: Failed to decode JSON file.")
 
 
-if __name__ == "__main__":
-    algorithm = "vfma"
-    problem = (
-        "genuchten"  # problems: "boha1","matya","ackley", "drop", "slug", "genuchten"
-    )
+def run_problem(algorithm, problem):
     PATH = f"results/{problem}_{algorithm}.json"
     mean_m1, std_m1, mean_m2, std_m2 = compute_metrics(problem, PATH)
     # Save txt with metrics
@@ -164,4 +160,20 @@ if __name__ == "__main__":
         ground_truth = [0.012605, 1.853943]
 
     # Update the plot_results call to use the dynamically set bounds and ground_truth
-    plot_results(problem, PATH, algorithm, bounds=bounds, ground_truth=ground_truth)
+    # plot_results(problem, PATH, algorithm, bounds=bounds, ground_truth=ground_truth)
+
+
+if __name__ == "__main__":
+    os.makedirs("plots", exist_ok=True)
+    os.makedirs("metrics", exist_ok=True)
+    problem_list = [
+        "drop",
+        "ackley",
+        "boha1",
+        "matya",
+        "slug",
+        "genuchten",
+    ]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
+    for problem in problem_list:
+        run_problem("ma", problem)
+        run_problem("vfma", problem)
