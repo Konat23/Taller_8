@@ -14,9 +14,8 @@ np.random.seed(42)
 def ma(func, m0, bounds, initial_temp=100.0, iter_per_temp=100):
     """
     Clásico Metropolis Algorithm (Simulated Annealing)
-    Adaptado a estilo VFMA
     """
-    T = initial_temp
+    T = initial_temp.copy()
     Em0 = func(m0)
     k = 0
 
@@ -27,8 +26,8 @@ def ma(func, m0, bounds, initial_temp=100.0, iter_per_temp=100):
                 m1[j] = np.random.uniform(bounds[j][0], bounds[j][1])
 
             delta_e = func(m1) - Em0
-            exponent = min(100, max(-100, -delta_e / T))  # clamp para evitar overflow
-            P = np.exp(exponent)
+            # exponent = min(100, max(-100, -delta_e / T))  # clamp para evitar overflow
+            P = np.exp(-delta_e / T)
 
             if delta_e < 0 or random.uniform(0, 1) < P:
                 m0 = m1.copy()
@@ -81,7 +80,7 @@ def vfma(
         for j in range(NM):
             T[j] = initial_temps[j] * np.exp(-C[j] * k ** (1 / NM))
 
-    return m0, Em0, k  # devolvemos sin imprimir
+    return m0, Em0, k
 
 
 def get_problem_params(problem: str):
@@ -116,7 +115,7 @@ def get_problem_params(problem: str):
         func = cost_slug_model
 
     elif problem == "genuchten":
-        bounds = np.array([[0.001, 0.02], [1, 10]])
+        bounds = np.array([[0.001, 0.02], [1.0, 10.0]])
         initial_temps = np.array([100.0, 100.0])
         num_pairs = 100
         func = cost_genuchten_model
@@ -143,8 +142,12 @@ def simulated_annealing(problem, algorithm):
     for i in range(num_pairs):
         m0_pair = np.array([m0[0][i], m0[1][i]])
         if algorithm == "ma":
+            print(
+                f"Initial guess: {m0_pair}, initial_temps: {initial_temps[0:1]}, bounds: {bounds}, func: {func}"
+            )
+            exit()
             m_opt, cost, iters = ma(
-                func, m0_pair, bounds, initial_temp=initial_temps[0]
+                func, m0_pair, bounds, initial_temp=initial_temps[0:1]
             )
         elif algorithm == "vfma":
             m_opt, cost, iters = vfma(
@@ -173,4 +176,4 @@ if __name__ == "__main__":
         "genuchten"
     ]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
     for problem in problem_list:
-        simulated_annealing(problem, "vfma")
+        simulated_annealing(problem, "ma")
