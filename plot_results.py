@@ -131,15 +131,7 @@ def compute_metrics(problem, PATH):
         print("Error: Failed to decode JSON file.")
 
 
-def run_problem(algorithm, problem):
-    PATH = f"results/{problem}_{algorithm}.json"
-    mean_m1, std_m1, mean_m2, std_m2 = compute_metrics(problem, PATH)
-    # Save txt with metrics
-    with open(f"metrics/{problem}_{algorithm}.txt", "w") as f:
-        f.write(f"Metrics for {problem} problem:\n")
-        f.write(f"Mean m1: {mean_m1}, Std Dev m1: {std_m1}\n")
-        f.write(f"Mean m2: {mean_m2}, Std Dev m2: {std_m2}\n")
-
+def get_problem_bounds(problem):
     if problem == "drop":
         bounds = [[-5, 5], [-5, 5]]
         ground_truth = [0, 0]
@@ -158,9 +150,86 @@ def run_problem(algorithm, problem):
     elif problem == "genuchten":
         bounds = [[0.001, 0.02], [1, 10]]
         ground_truth = [0.012605, 1.853943]
+    else:
+        raise ValueError(f"Unknown problem specified: {problem}")
+    return bounds, ground_truth
+
+
+def run_problem(algorithm, problem):
+    PATH = f"results/{problem}_{algorithm}.json"
+    mean_m1, std_m1, mean_m2, std_m2 = compute_metrics(problem, PATH)
+    # Save txt with metrics
+    with open(f"metrics/{problem}_{algorithm}.txt", "w") as f:
+        f.write(f"Metrics for {problem} problem:\n")
+        f.write(f"Mean m1: {mean_m1}, Std Dev m1: {std_m1}\n")
+        f.write(f"Mean m2: {mean_m2}, Std Dev m2: {std_m2}\n")
+
+    bounds, ground_truth = get_problem_bounds(problem)
 
     # Update the plot_results call to use the dynamically set bounds and ground_truth
     # plot_results(problem, PATH, algorithm, bounds=bounds, ground_truth=ground_truth)
+    plot_comparison(problem, bounds, ground_truth)
+
+
+def plot_comparison(problem, bounds, ground_truth):
+    try:
+        # Load results for both algorithms
+        PATH_ma = f"results/{problem}_ma.json"
+        PATH_vfma = f"results/{problem}_vfma.json"
+
+        with open(PATH_ma, "r") as f:
+            results_ma = json.load(f)
+
+        with open(PATH_vfma, "r") as f:
+            results_vfma = json.load(f)
+
+        # Extract m1 and m2 values for both algorithms
+        m_values_ma = [result["m"] for result in results_ma]
+        m1_values_ma = [m[0] for m in m_values_ma]
+        m2_values_ma = [m[1] for m in m_values_ma]
+
+        m_values_vfma = [result["m"] for result in results_vfma]
+        m1_values_vfma = [m[0] for m in m_values_vfma]
+        m2_values_vfma = [m[1] for m in m_values_vfma]
+
+        # Create scatter plot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(m1_values_ma, m2_values_ma, c="blue", label="MA Results")
+        plt.scatter(m1_values_vfma, m2_values_vfma, c="green", label="VFMA Results")
+        plt.scatter(
+            ground_truth[0],
+            ground_truth[1],
+            c="red",
+            marker="x",
+            s=100,
+            label="Ground Truth",
+        )
+
+        plt.axvline(bounds[0][0], color="gray", linestyle="--", label="Bounds")
+        plt.axvline(bounds[0][1], color="gray", linestyle="--")
+        plt.axhline(bounds[1][0], color="gray", linestyle="--")
+        plt.axhline(bounds[1][1], color="gray", linestyle="--")
+
+        plt.xlabel("m1")
+        plt.ylabel("m2")
+        plt.title(f"Comparison of MA and VFMA Results for {problem}")
+        plt.legend()
+        plt.grid()
+
+        # Save the plot as a PDF in the "plots" directory
+        os.makedirs("plots", exist_ok=True)
+        plt.savefig(f"plots/comparison_{problem}.pdf")
+        plt.show()
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+    except json.JSONDecodeError:
+        print("Error: Failed to decode JSON file.")
+
+
+def comparation(problem):
+    bounds, ground_truth = get_problem_bounds(problem)
+    plot_comparison(problem, bounds, ground_truth)
 
 
 if __name__ == "__main__":
@@ -175,5 +244,4 @@ if __name__ == "__main__":
         "genuchten",
     ]  # "drop", "ackley", "boha1", "matya", "slug", "genuchten"
     for problem in problem_list:
-        run_problem("ma", problem)
-        run_problem("vfma", problem)
+        comparation(problem)
